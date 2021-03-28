@@ -127,11 +127,12 @@ def executeJob(sc, app=PyCryptoBot(), trading_data=pd.DataFrame()):
         # deathcross = bool(df_last['deathcross'].values[0])
         macdgtsignal = bool(df_last['macdgtsignal'].values[0])
         macdgtsignalco = bool(df_last['macdgtsignalco'].values[0])
+        macdgtsignalco_delta1 = bool(df_last['macdgtsignalco_delta1'].values[0])
         ema12ltema26 = bool(df_last['ema12ltema26'].values[0])
         ema12ltema26co = bool(df_last['ema12ltema26co'].values[0])
         macdltsignal = bool(df_last['macdltsignal'].values[0])
         macdltsignalco = bool(df_last['macdltsignalco'].values[0])
-        macdgtsignalco_delta1 = bool(df_last['macdgtsignalco_delta1'].values[0])
+        macdltsignalco_delta1 = bool(df_last['macdltsignalco_delta1'].values[0])
         obv = float(df_last['obv'].values[0])
         obv_pc = float(df_last['obv_pc'].values[0])
         elder_ray_bull = float(df_last['elder_ray_bull'].values[0])
@@ -160,7 +161,7 @@ def executeJob(sc, app=PyCryptoBot(), trading_data=pd.DataFrame()):
         two_black_gapping = bool(df_last['two_black_gapping'].values[0])
 
         # criteria for a buy signal
-        if macdgtsignalco and ema12gtema26 and close_delta1 > 1 and obv_pc < 50 and obv_pc > -50 and obv_pc_delta1 < 100 and obv_pc_delta1 > -50 and (elder_ray_bull > elder_ray_bull_delta1 or elder_ray_bull > elder_ray_bull_delta2) and elder_ray_bear > elder_ray_bear_delta1 and last_action != 'BUY':
+        if macdgtsignalco and ema12gtema26 and close_delta1 > 1 and ((obv_pc < 0 or obv_pc_delta1 < 0) or (macdltsignalco_delta1 == False)) and obv_pc > -50 and obv_pc < 50 and (elder_ray_bull > elder_ray_bull_delta1 or elder_ray_bull > elder_ray_bull_delta2) and elder_ray_bear > elder_ray_bear_delta1 and (elder_ray_bear > elder_ray_bear_delta2 or elder_ray_bear_delta1 > elder_ray_bear_delta2)and last_action != 'BUY':
             action = 'BUY'
         # criteria for a sell signal
         elif ema12ltema26 and macdltsignal and last_action not in ['', 'SELL']:
@@ -202,27 +203,27 @@ def executeJob(sc, app=PyCryptoBot(), trading_data=pd.DataFrame()):
                 print(log_text, "\n")
                 logging.warning(log_text)
 
-            # profit bank at sell at fibonacci band for tiny gains
-            if margin <= 3 and app.sellUpperPcnt() != None and fib_high > fib_low and fib_high <= float(price):
+            # profit bank at sell at fibonacci band for big gains
+            if margin >= 5 and fib_high > fib_low and fib_high <= float(price) and close_delta1 < 1 and close_delta2 < 1 and elder_ray_bear < elder_ray_bear_delta1 and elder_ray_bear_delta1 < elder_ray_bear_delta2:
                 action = 'SELL'
                 last_action = 'BUY'
                 log_text = '! Profit Bank Triggered (Fibonacci Band: ' + str(fib_high) + ')'
                 print(log_text, "\n")
                 logging.warning(log_text)
 
-            # profit bank at sell at fibonacci band for buy a big fucking boat gains
-            if margin > 3 and app.sellUpperPcnt() != None and fib_high > fib_low and fib_high <= float(price) and close_delta1 < 1 and close_delta2 < 1:
+            # profit bank at sell at fibonacci band for small gains
+            if margin < 5 and fib_high > fib_low and fib_high <= float(price) and (close_delta1 < 0.97 or obv_pc < -200) and elder_ray_bear < elder_ray_bear_delta1:
                 action = 'SELL'
                 last_action = 'BUY'
-                log_text = '! KA-CHING! (Fibonacci Band: ' + str(fib_high) + ')'
+                log_text = '! Profit Bank Triggered (Fibonacci Band: ' + str(fib_high) + ')'
                 print(log_text, "\n")
                 logging.warning(log_text)
 
-            # abort when strong reversal detected
-            if (macdltsignal or macdltsignalco) and macdgtsignalco_delta1 == False:
+            # abort if fibonacci band not reached and downward trend detected
+            if margin >= 3 and fib_high > fib_low and fib_high > float(price) and close_delta1 < 1 and elder_ray_bear < elder_ray_bear_delta1 and elder_ray_bull < elder_ray_bull_delta1:
                 action = 'SELL'
                 last_action = 'BUY'
-                log_text = '! Aborted (Strong Reversal Detected)'
+                log_text = '! ABORTED. Downward Trend Detected Before Reaching Fibonacci Band (Fibonacci Band: ' + str(fib_high) + ')'
                 print(log_text, "\n")
                 logging.warning(log_text)
 

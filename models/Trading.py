@@ -655,6 +655,10 @@ class TechnicalAnalysis():
         self.df['macdltsignalco'] = self.df.macdltsignal.ne(self.df.macdltsignal.shift())
         self.df.loc[self.df['macdltsignal'] == False, 'macdltsignalco'] = False
 
+        self.df['macdltsignalco_delta1'] = self.df.macd.shift(1) < self.df.signal.shift(1)
+        self.df['macdltsignalco_delta1'] = self.df.macdltsignalco_delta1.ne(self.df.macdltsignalco_delta1.shift())
+        self.df.loc[self.df['macdltsignalco_delta1'] == False, 'macdltsignalco_delta1'] = False
+
     def getFibonacciRetracementLevels(self, price=0):
         # validates price is numeric
         if not isinstance(price, int) and not isinstance(price, float):
